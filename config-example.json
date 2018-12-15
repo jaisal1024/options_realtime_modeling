@@ -1,0 +1,8 @@
+{
+  "fred": "your-api-key",
+  "tradier": "Bearer + your-api-key",
+  "plotly": {
+    "username": "your-username",
+    "api-key": "your-api-key"
+  }
+}
