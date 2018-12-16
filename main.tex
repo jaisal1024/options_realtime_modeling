@@ -13,61 +13,108 @@
 
 
 \begin{abstract}
-    This paper explores the Fischer-Black-Scholes options pricing model, derives a predictive extension model, and visualizes both models in comparison to real-time pricing options pricing. The paper also explores various methodologies of calculating historical volatility. A portfolio of 5 U.S. Market Stocks and 1 index fund was taken as example for the project. The model was limited to visual analysis from real-time simulations as further explained in the extensions section. 
+    This paper explores the Black-Scholes-Merton options pricing model, derives a predictive extension model, and visualizes both models in comparison to real-time pricing options pricing. The paper also explores various methodologies of calculating historical volatility. A portfolio of 5 U.S. Market Stocks and 1 index fund was taken as example for the project. The model was limited to visual analysis from real-time simulations as further explained in the extensions section. 
 \end{abstract}
 
 
 \section{Introduction}
-\begin{flushleft} The impact of the Black-Scholes modeling on modern financial markets drove the paper's initial fascination. The paper intends to visually model the Fischer-Black Scholes Model, a predictive extension model, and the real-time options spread for a better understanding of the options market. This project first seeks to explore the dynamics of the Fischer-Black-Scholes and its derivation. The paper then introduces a predictive extension to which a visual analysis is displayed in real-time for one to decipher its effectiveness. Four methodologies for the historical volatility calculation were explored and compared in real-time between the 6 example assets. The Fischer-Black-Scholes calculation for real-time assets with historical data was then modeled. The extended predictive model was derived for real-time assets. And lastly, the F-B-S, predictive model, and real-time options pricing was visually displayed and analyzed using 3D volatility surfaces. The paper, itself, will begin with the methodology: where the historical volatility calculations, assumptions of the Fischer-Black-Scholes model, and the predictive extension will be discussed. Then introduce the implementation: where the real-time numerical simulation, 3D visualization, and discussion of results are presented. Lastly, it will conclude with a short conclusion, explanation of the software development, limitations, and possible extensions and improvements of the model.
+\begin{flushleft} The impact of the Black-Scholes-Merton model on modern financial markets drove the paper's initial fascination. The paper intends to visually model the Black-Scholes-Merton Model, a predictive extension model, and the real-time options spread for a better understanding of the options market. This project first seeks to explore the dynamics of the Black-Scholes-Merton and its derivation. The paper then introduces a predictive extension to which a visual analysis is displayed in real-time for one to decipher its effectiveness. Four methodologies for the historical volatility calculation were explored and compared in real-time between the 6 example assets. The Black-Scholes-Merton calculation for real-time assets with historical data was then modeled. The extended predictive model was derived for real-time assets. And lastly, the F-B-S, predictive model, and real-time options pricing was visually displayed and analyzed using 3D volatility surfaces. The paper, itself, will begin with the methodology: where the historical volatility calculations, assumptions of the Black-Scholes-Merton model, and the predictive extension will be discussed. Then introduce the implementation: where the real-time numerical simulation, 3D visualization, and discussion of results are presented. Lastly, it will conclude with a short conclusion, explanation of the software development, limitations, and possible extensions and improvements of the model.
 \end{flushleft}
 
 
 \section{Methodology}
 
-\subsection{Introduction to the Fischer-Black-Scholes Model}
+\subsection{Introduction to the Black-Scholes-Merton Model}
 \begin{flushleft}
-The 2-dimensional structure is composed of spring-dash pot networks, each with five links. Each floor of the structure contains a hydraulic leveling mechanism that allows it to compensate for rotation of the structure due to external shocks (i.e. an earthquake, sinkhole, or structural deformation).
-\end{flushleft} \newpage
-\begin{figure}[!]
-\includegraphics[width =\textwidth]{structure}
-\caption{An example of the structure is shown in this graphic above }
-\centering
-\end{figure}
-
-\subsection{Equation of Motion and Tension}
+The Black-Scholes model was initially published in 1973. It provided the first deterministic pricing model for the options market. This led to a boom in the options financial markets that has continued till present day. In 1976, Merton published his extension of the Black-Scholes model which included the effect of dividend payouts. Today, the Black-Scholes-Merton model is used to determine the Greeks and Implied Volatility in the financial options market. Its impact on efficiently pricing the options market as a benchmark model holds strong even some 40 years later. For this reason, this paper starts its extension and comparative visualization with such a model. 
+\end{flushleft}
+\subsection{Black-Scholes-Merton Equation}
 \begin{flushleft}
-$T_{jk}= S_{jk}(\mid\mid{X_j-X_k}\mid\mid-R^0_{jk}) + D{jk}\cdot \frac{d}{dt}(\mid\mid{X_j-X_k}\mid\mid)$
+$C_t(s,t) = S \cdot e^{-qt}  \cdot N (d_1) - X\cdot e^{-rt} \cdot N(d_2)$
 \newline\newline
-$\frac{d}{dt}(\mid\mid{X_j-X_k}\mid\mid) = \frac{(X_j-X_k}{\mid\mid X_j - X_k\mid\mid}\cdot (V_j-V_k)$
+$P_t(S,t) = -e^{-qt}  \cdot  S \cdot N (-d_1) + X\cdot e^{-rt} \cdot N(-d_2)$
+\newline\newline
+where: 
+\newline\newline
+$d_1 = \frac {ln(\frac{S}{X}) + (r-q+ \frac{\sigma^2}{2}) \cdot t}{\sigma \cdot \sqrt {t}}$
+\newline\newline
+$d_2 = d_1 - \sigma \cdot \sqrt{t}$
+\newline\newline
+$N(x) = \int_{-\infty}^{x} {\frac {1}{\sqrt{2\pi}\cdot \sigma^2}\cdot e ^{\frac{-(u-\mu)^2}{2\sigma^2}} du},$
+where $\sigma^2 = 1, \mu = 0$
 \end{flushleft}
 
-\subsubsection {Shocking the Structure}
-\begin{flushleft} A shock to the structure is simulated by the rotation of the platform on which the structure sits. The left-side foundation stays fixed at the origin and the right-side foundation is set at the start of each time-step to: 
-$(x_1,y_1) = (width \cdot cos(\theta), width \cdot sin(\theta))$
-Where $\theta$ is a value within the full vector of $\theta$ values ranging from 0 to $t_{end}$ with a step size dt. This vector is initialized based on a given $t_{end}$, dt, $\theta_{max}$, and $\omega$. 
-$\theta$ at each time step is then calculated by the following: 
-\newline \newline
-$N = min(length(\frac{t_{end}}{dt}),\frac{1}{\omega}\cdot \frac{\theta_{max}}{dt})$
-\newline\newline
-$theta = \theta_{max}\cdot sin(\frac{\frac{\pi}{2} \cdot i}{N})$
+\subsubsection {Notable Assumptions}
+\begin{flushleft}
+\begin{enumerate}
+\item The cumulative distribution function N(x) follows market probabilities. In fact, there are unpredictable Black Swan events which severely skew market movements. Fat Tail distributions are more accurate for financial markets. 
+\item  Market speculation has no effect on the pricing of options.
+\end{enumerate}
+
 \end{flushleft}
 
-\subsection{Numerical Method}
-\subsubsection{Balance}
-$\Delta R_m = (height\cdot(level+1)-X^0_1, height\cdot(level+1)-X^1_1)\cdot s\cdot dt$
-\newline\newline
-$\Delta R_c = [{(X^2_0-X^0_0)}^2, {(X^1_0-X^3_0)}^2]\cdot \frac{s^{0.5}}{5}\cdot dt$
+\subsubsection {Historical Volatility $\sigma$}
+\begin{flushleft} Historical volatility in the Black-Scholes-Merton $\sigma$ can be calculated by different methods. Classically, $\sigma$ is calculated by either the standard deviation of the log returns or the percent change of close-to-close asset pricing for the past 30 days normalized to the last trading year. This methodology utilizes the close-to-close historical pricing. The log returns is argued to be a more mathematically sound indicator than percent change for $\sigma$. 
 \newline \newline
-where s = strength, n = node number and m = index in $X^n_m$
+$hv_{percent} = \sqrt{\frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2},$ where $x=\frac{s(t)_{close} - s(t-1)_{close}}{s(t-1)_{close}} $
+\newline\newline
+$hv_{log} = \sqrt{\frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2},$ where $x=log{\frac{S^t_{close}}{ S^{t-1}_{close}}}$
+\end{flushleft}
+\begin{flushleft} However, Historical volatility in the Black-Scholes-Merton $\sigma$ can also be calculated by intraday methods. This paper presents two possible extensions. The first is self-derived. It utilizes both the open-close and high-low pricing to return a weighted intraday historical volatility. The second is the highly referenced Parkinson Historical Intraday volatility calculation. Both methodologies utilizes the intraday historical pricing and provide a different outlook at on $\sigma$. 
+\newline \newline
+$hv_{w_ext} = \sqrt{\frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2},$ where $x=log{\frac{S^t_{high}}{ S^{t-1}_{low}}} \cdot w + log{\frac{S^t_{high}}{ S^{t-1}_{low}}} \cdot (1-w)$
+\newline\newline
+$hv_{w_park} = \sqrt{\frac{1}{N} \sum_{i=1}^N \frac{1}{4\ln(2)}(x_i )^2},$ where $ x=log{\frac{S^t_{high}}{ S^{t-1}_{low}}} \cdot $
+\end{flushleft}
+
+\subsection{Predictive Extension}
+\begin{flushleft}
+The predictive extension presented in this paper builds off the Black-Scholes-Merton model. The model attempted to scale the B-S-M model by sigmoid function encapsulating current financial market health and beta exposure of the underlying asset to the market conditions.
+\end{flushleft}
+
+\subsubsection{Equation}
+$M(c_1, c_2, dd, \beta, t) = \frac{x}{1+ (|x|)} + 1,$ where $x = \frac{c_1\beta\sqrt{t}}{dd} - c_2$
+\newline\newline
+$C_{ext}(s,t) = S \cdot e^{-qt}  \cdot N (d_1) - X\cdot e^{-rt} \cdot N(d_2) \cdot M(c_1, c_2,dd, \beta, t)$
+\newline \newline
+$P_{ext}(S,t) = (-e^{-qt}  \cdot  S \cdot N (-d_1) + X\cdot e^{-rt} \cdot N(-d_2)) \cdot \frac{1}{M(c_1, c_2,dd, \beta, t)}$
+\newline \newline
+where $c_1, c_2$ = constants, dd = defaulted debt and $\beta$ = risk exposure of an asset to the market
 \newline
-\begin{flushleft} Each level of the structure is equipped with an independent hydraulic leveling system that responds to the deformation in the structure in the previous time-step.  The compensations are in the form of changes to the rest lengths of the lateral springs $(R_m)$ and cross springs $(R_c)$.
-$\Delta R_m = X_ $
-$\Delta R_c = X_ $
-The cross muscles respond to $displacement^2$ in order to prevent overcompensation to small deviations.  The lateral muscles do not face this issue with a small enough time-step, however, do face the same problem when compensation strength is too high. 
-\end{flushleft}
-\begin{flushleft} The project implements the Forward Euler method to solve for the positions and velocities at the following time-step.  The spring-dash pot network allows forces to be transferred across the links between nodes, while damping small disturbances to prevent the accumulation of small instabilities. The project uses a time step of dt= $1x10^{-4}$ to ensure a small enough time step to minimize numerical instability. 
+\subsubsection {Notable Assumptions}
+\begin{flushleft}  
+\begin{enumerate}
+\item  Speculation about the current market conditions has an impact on the pricing of long-dated options. 
+\item The $\beta$ exposure of an underlying asset to the market affects the pricing of certain assets over assets with a lower $\beta$. 
+\item The time of the options has a square-root proportionality with the pricing of options under certain market conditions. Longer-dated options will be square-root proportionally more affected by overall market speculation. 
+\item The dd, defaulted debt, indicator can be effectively represent the overall financial market health. 
+\item The M function follows a Sigmoid proportionality with the Black-Scholes pricing model centered by $c_1, c_2$. 
+\end{enumerate}
 \end{flushleft}
 
+\subsection {Real-Time Pricing}
+\begin{flushleft} 
+The real-time pricing involved a substantial amount of software development. This was deemed worthy as the model's visual analysis is better implemented in real-time. 
+\end{flushleft}
+\subsubsection {Assets Chosen}
+\begin{itemize}
+\item MSFT - Microsoft
+\item BA - Boeing
+\item V - Visa 
+\item AAPL - Apple
+\item GOOGL - Alphabet Class A
+\item SPY -  SPDR S&P 500 ETF Trust
+\end{itemize}
+\begin{flushleft} 
+These assets were chosen directly from my personal portfolio as they held the most interest to me. In the code, one can select their own portfolio assets to visualize. 
+\end{flushleft}
+\subsubsection {API Interactions}
+\begin{enumerate}
+\item FRED - Federal Reserve Economic Data
+\item IEX Exchange - Real-time Stock Data 
+\item Tradier - Real-time Options Data
+\item Plotly - Interactive 3D Visualizations
+\end{enumerate}
 
 \newpage
 \section{Implementation}
