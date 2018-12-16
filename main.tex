@@ -1,0 +1,211 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{flafter}
+\usepackage{float}
+\graphicspath{ {./images/} }
+
+\title{Real-Time Options Pricing Model}
+\author{Jaisal Friedman}
+\date{December 16 2018}
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+    This paper explores the Fischer-Black-Scholes options pricing model, derives a predictive extension model, and visualizes both models in comparison to real-time pricing options pricing. The paper also explores various methodologies of calculating historical volatility. A portfolio of 5 U.S. Market Stocks and 1 index fund was taken as example for the project. The model was limited to visual analysis from real-time simulations as further explained in the extensions section. 
+\end{abstract}
+
+
+\section{Introduction}
+\begin{flushleft} The impact of the Black-Scholes modeling on modern financial markets drove the paper's initial fascination. The paper intends to visually model the Fischer-Black Scholes Model, a predictive extension model, and the real-time options spread for a better understanding of the options market. This project first seeks to explore the dynamics of the Fischer-Black-Scholes and its derivation. The paper then introduces a predictive extension to which a visual analysis is displayed in real-time for one to decipher its effectiveness. Four methodologies for the historical volatility calculation were explored and compared in real-time between the 6 example assets. The Fischer-Black-Scholes calculation for real-time assets with historical data was then modeled. The extended predictive model was derived for real-time assets. And lastly, the F-B-S, predictive model, and real-time options pricing was visually displayed and analyzed using 3D volatility surfaces. The paper, itself, will begin with the methodology: where the historical volatility calculations, assumptions of the Fischer-Black-Scholes model, and the predictive extension will be discussed. Then introduce the implementation: where the real-time numerical simulation, 3D visualization, and discussion of results are presented. Lastly, it will conclude with a short conclusion, explanation of the software development, limitations, and possible extensions and improvements of the model.
+\end{flushleft}
+
+
+\section{Methodology}
+
+\subsection{Introduction to the Fischer-Black-Scholes Model}
+\begin{flushleft}
+The 2-dimensional structure is composed of spring-dash pot networks, each with five links. Each floor of the structure contains a hydraulic leveling mechanism that allows it to compensate for rotation of the structure due to external shocks (i.e. an earthquake, sinkhole, or structural deformation).
+\end{flushleft} \newpage
+\begin{figure}[!]
+\includegraphics[width =\textwidth]{structure}
+\caption{An example of the structure is shown in this graphic above }
+\centering
+\end{figure}
+
+\subsection{Equation of Motion and Tension}
+\begin{flushleft}
+$T_{jk}= S_{jk}(\mid\mid{X_j-X_k}\mid\mid-R^0_{jk}) + D{jk}\cdot \frac{d}{dt}(\mid\mid{X_j-X_k}\mid\mid)$
+\newline\newline
+$\frac{d}{dt}(\mid\mid{X_j-X_k}\mid\mid) = \frac{(X_j-X_k}{\mid\mid X_j - X_k\mid\mid}\cdot (V_j-V_k)$
+\end{flushleft}
+
+\subsubsection {Shocking the Structure}
+\begin{flushleft} A shock to the structure is simulated by the rotation of the platform on which the structure sits. The left-side foundation stays fixed at the origin and the right-side foundation is set at the start of each time-step to: 
+$(x_1,y_1) = (width \cdot cos(\theta), width \cdot sin(\theta))$
+Where $\theta$ is a value within the full vector of $\theta$ values ranging from 0 to $t_{end}$ with a step size dt. This vector is initialized based on a given $t_{end}$, dt, $\theta_{max}$, and $\omega$. 
+$\theta$ at each time step is then calculated by the following: 
+\newline \newline
+$N = min(length(\frac{t_{end}}{dt}),\frac{1}{\omega}\cdot \frac{\theta_{max}}{dt})$
+\newline\newline
+$theta = \theta_{max}\cdot sin(\frac{\frac{\pi}{2} \cdot i}{N})$
+\end{flushleft}
+
+\subsection{Numerical Method}
+\subsubsection{Balance}
+$\Delta R_m = (height\cdot(level+1)-X^0_1, height\cdot(level+1)-X^1_1)\cdot s\cdot dt$
+\newline\newline
+$\Delta R_c = [{(X^2_0-X^0_0)}^2, {(X^1_0-X^3_0)}^2]\cdot \frac{s^{0.5}}{5}\cdot dt$
+\newline \newline
+where s = strength, n = node number and m = index in $X^n_m$
+\newline
+\begin{flushleft} Each level of the structure is equipped with an independent hydraulic leveling system that responds to the deformation in the structure in the previous time-step.  The compensations are in the form of changes to the rest lengths of the lateral springs $(R_m)$ and cross springs $(R_c)$.
+$\Delta R_m = X_ $
+$\Delta R_c = X_ $
+The cross muscles respond to $displacement^2$ in order to prevent overcompensation to small deviations.  The lateral muscles do not face this issue with a small enough time-step, however, do face the same problem when compensation strength is too high. 
+\end{flushleft}
+\begin{flushleft} The project implements the Forward Euler method to solve for the positions and velocities at the following time-step.  The spring-dash pot network allows forces to be transferred across the links between nodes, while damping small disturbances to prevent the accumulation of small instabilities. The project uses a time step of dt= $1x10^{-4}$ to ensure a small enough time step to minimize numerical instability. 
+\end{flushleft}
+
+
+\newpage
+\section{Implementation}
+\subsection{Numerical Simulation}
+\begin{flushleft}
+The implementation of the methodology was carried out in python. We built a working self-balancing structure which could take the following parameters, we then ran the simulation across multiple $\theta_{max}$ and $\omega$ values, tracked the resultant quantities (shown below), and graphed them (displayed in the results section): \newline
+Parameter Sweeps: 
+\begin{itemize}
+    \item $\theta_{max}$
+    \begin{itemize}
+        \item $\ 0 \leq \theta \leq \theta_{max}$ rad
+        \item $ \frac{\pi}{64} \leq \theta_{max} \leq \frac{\pi}{16} $ rad
+        \item Constant: $\omega$ = $\frac{\pi}{100} \frac{\theta}{s}$ rad/s
+    \end{itemize}
+    \item $\omega$ sweep
+    \begin{itemize}
+        \item $\ \frac{\pi}{100} \leq \omega \leq \frac{\pi}{200}$ rad/s
+        \item Constant: $\theta_{max}$ = $\pi/64$ rad
+    \end{itemize}
+\end{itemize}
+Our simulation used the following constants: 
+\begin{itemize}
+    \item Globals
+    \begin{itemize}
+        \item Mass = 1 kg
+        \item Spring Constant = 15000 N/m
+        \item Dash-pot Constant = 600 N/m
+        \item Gravity = 9.8 $m/s^2$
+        \item Maximal Floor Strength = 10000 N
+    \end{itemize}
+    \item Structure
+    \begin{itemize}
+        \item Width = 2 m
+        \item Strength = 3 N
+        \item Levels = 5 dimensionless
+    \end{itemize}
+    \item Simulate
+    \begin{itemize}
+        \item dt = $1\cdot 10^{-4}$ s
+        \item $t_{end}$ = 10 s
+    \end{itemize}
+\end{itemize}
+We tracked the following resultant quantities in each simulation: 
+\begin{itemize}
+    \item Horizontal Center of Mass (m)
+    \item Horizontal Center of Velocity (m/s)
+    \item Sum of Vertical Displacement (m)
+\end{itemize} 
+\end{flushleft}
+\subsection{Results}
+\begin{flushleft}
+1. \textbf{Parameter Sweep} over $theta_max$ and $\omega$ were run.\newline 
+Figures 3,4,and 5 are the results for the parameter sweep of $theta_max$ and Figures 6,7,and 8 are the results for the parameter sweep of $\omega$. \newline
+2. \textbf{Vertical Displacement per level} was graphed over a series of simulations to show perturbations to the structure. See Figure 9 in Appendix under Figures 
+
+\textbf{These can be seen at in the Appendix section under Figures}
+\end{flushleft}
+
+\subsection{Discussion}
+
+
+\begin{flushleft}{The simulation was carried out over a number of parameter combinations.  We altered the maximum angle of platform rotation and speed of platform rotation.  Our observations recorded the resulting effects of the parameter changes. From the Figures in the Appendix, we can see the instances where the figure becomes unstable at certain $\theta and \omega$ values. 
+While the choice of parameters determines whether or not the entire structure will collapse, an interesting pattern is observed during stable conditions.  Stability is highest is the bottom structure and lowest in the second level, however, the trend then switches to increasing with height. This is due to the efforts of the level below contributing to an  task of compensation by the structure above.} 
+\end{flushleft}
+
+
+\section{Conclusion}
+\subsection{Improvements}
+\begin{flushleft} 
+\begin{itemize}
+  \item \textbf{Horizontal Gravity} \newline
+  \tabHorizontal Horizontal Gravity is not accounted for in the model. This is a known area of improvement that the model was not able to account for. This resulted in a lesser horizontal velocity due to a lesser horizontal force when the structure was rotated. This would arguably help the structures ability to self-balance. This feature would be easy to implement by splitting the components of gravity. Unfortunately, the model would break if the x component of gravity was not set to 0.
+  \item \textbf{Structural Tension across levels} \newline
+  \tabHorizontal Structural tension was not transferred across all levels. This means the bottom levels did not bear the weight of the upper levels and thus did not bear the force of their position. This is also a feature, the model should include to obtain real-world accuracy. We built the model to be only one level; when we decided to extend the height of the model. We did not have the time to implement this structural code change to the force calculations and thus to our model. 
+  \item \textbf{Reaction when right foot node > width} \newline
+  \tabHorizontal When the right foot node reaches a y value greater than height, the structure can't react. This is because the right leg is set by $width\cdot sin(\theta)$. This is one of the reasons we bound the parameter sweep for $\omega$ and $\theta_{max}$ as we did. 
+\end{itemize}
+\end{flushleft}
+
+\subsection{Extensions}
+\begin{flushleft} 
+\begin{itemize}
+  \item \textbf{Fixing the Improvements} \newline
+  \tabHorizontal Fixing the listed Improvements in the above section would clarify a more stable and real-world applicable parameter sweep. This could be used to distinguish the impact and limits of a hydraulic system on a basic building structure. Our model could be translated to a simplified model of a buildings structure via dimensional analysis.  
+  \item \textbf{3D-Rendering} \newline
+  \tabHorizontal Our model could easily be extended to include 3 dimensions. This would improve the visual appeal and real-world application of the model. Simulations with rotations around specific axes could also be distinguished and analyzed. This would be pertinent to using our structure to model any real-world self-balancing hydraulic system. 
+  \item \textbf{Physical Therapy and Core Stability Modelling} \newline
+  \tabHorizontal This project started with the fascination of the human body and its ability to self balance on tilted-platforms. This model could be extended to analyze a mechanism such as core strength by cutting the model down to 1 level, adding feet as the stable ground point, adding a head mass, and adding hands for balancing. This would be a difficult, but fascinating extension. 
+\end{itemize}
+\end{flushleft}
+
+
+\section{Appendix}
+\subsubsection{Code}
+\begin{flushleft}
+ The project was done in python & jupyter hub. The link to the github is here: https://github.com/jaisal1024/options_realtime_modeling
+\end{flushleft}
+\subsection{Figures}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/turn.png}
+\caption{Live Modelling of a Rotated Structure}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/theta_xcm.png}
+\caption{Parameter Sweep for $\theta_{max}$}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/theta_vcm.png}
+\caption{Parameter Sweep for $\theta_{max}$}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/theta_y.png}
+\caption{Parameter Sweep for $\theta_{max}$}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/speedrot_xcm.png}
+\caption{Parameter Sweep for $\omega$}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/speedrot_vcm.png}
+\caption{Parameter Sweep for $\omega$}
+\centering
+\end{figure}
+\newpage \newpage
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/speedrot_y.png}
+\caption{Parameter Sweep for $\omega$}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/download-9.png}
+\caption{Vertical Displacements over Levels of Structure}
+\centering
+\end{figure}
+
+\end{document}
