@@ -93,6 +93,7 @@ def hv_all(stock, hv_1, hv_2, hv_weighted, hv_hl):
 # OPTIONS PRICING
 def M_(c, default, beta, t):
     x = c*beta*np.sqrt(t)/default
+    x = (x-2)/10
     return x/(1+abs(x))+1
 def call_(s, x, t, r, q, d1, d2):
     return s*math.exp(-q*t)*norm.cdf(d1)-x*math.exp(-r*t)*norm.cdf(d2)
@@ -145,3 +146,14 @@ def extractQ(p, stocks):
                 sum_+= a['amount']
         q[q_s] = sum_/p[q_s]
     return q
+
+def matplotlib_to_plotly(cmap, pl_entries):
+    h = 1.0/(pl_entries-1)
+    pl_colorscale = []
+
+    for k in range(pl_entries):
+        C = map(np.uint8, np.array(cmap(k*h)[:3])*255)
+        C = list(map(int,C))
+        pl_colorscale.append([k*h, 'rgb'+str((C[0], C[1], C[2]))])
+
+    return pl_colorscale
