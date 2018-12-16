@@ -91,9 +91,8 @@ def hv_all(stock, hv_1, hv_2, hv_weighted, hv_hl):
 
 
 # OPTIONS PRICING
-def M_(c, default, beta, t):
-    x = c*beta*np.sqrt(t)/default
-    x = (x-2)/10
+def M_(c1, c2,default, beta, t):
+    x = c1*beta*np.sqrt(t)/default - c2
     return x/(1+abs(x))+1
 def call_(s, x, t, r, q, d1, d2):
     return s*math.exp(-q*t)*norm.cdf(d1)-x*math.exp(-r*t)*norm.cdf(d2)

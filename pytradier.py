@@ -75,10 +75,3 @@ class Tradier(object):
         if (return_type == 'pandas'):
             response = pd.DataFrame(response)
         return response
-
-
-    # def _request(self, method, _url, *args, **kwargs):
-    #     """
-    #     Makes the HTTP request using requests module
-    #     """
-    #     return self._session.request(method, self._endpoint + _url, **kwargs)
