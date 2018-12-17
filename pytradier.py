@@ -18,7 +18,7 @@ class Tradier(object):
             )
         self._session = requests.Session()
         self._url = "https://sandbox.tradier.com"
-        self._auth = TRADIER_API_KEY
+        self._auth = "Bearer "+ TRADIER_API_KEY
         self.portfolio = portfolio
 
         self._session.headers = {}
@@ -70,6 +70,7 @@ class Tradier(object):
         try:
             response = self._session.get(endpoint, params = params).json()["options"]["option"]
         except ValueError:
+            print(symbol, expiration)
             raise ValueError
 
         if (return_type == 'pandas'):
