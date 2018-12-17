@@ -3,7 +3,17 @@
 \usepackage{graphicx}
 \usepackage{flafter}
 \usepackage{float}
+\usepackage{subcaption}
 \graphicspath{ {./images/} }
+\usepackage{minted}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+\urlstyle{same}
 
 \title{Real-Time Options Pricing Model}
 \author{Jaisal Friedman}
@@ -49,6 +59,7 @@ where $\sigma^2 = 1, \mu = 0$
 \begin{enumerate}
 \item The cumulative distribution function N(x) follows market probabilities. In fact, there are unpredictable Black Swan events which severely skew market movements. Fat Tail distributions are more accurate for financial markets. 
 \item  Market speculation has no effect on the pricing of options.
+\item The option is a European option meaning it can only be exercised at expiry. This makes the mathematics infinity more simple. However, for American options this is false; they can be executed at any moment. 
 \end{enumerate}
 
 \end{flushleft}
@@ -115,82 +126,140 @@ These assets were chosen directly from my personal portfolio as they held the mo
 \item Tradier - Real-time Options Data
 \item Plotly - Interactive 3D Visualizations
 \end{enumerate}
-
 \newpage
+
+
 \section{Implementation}
-\subsection{Numerical Simulation}
+\subsection{Historical Volatility $\sigma$}
 \begin{flushleft}
-The implementation of the methodology was carried out in python. We built a working self-balancing structure which could take the following parameters, we then ran the simulation across multiple $\theta_{max}$ and $\omega$ values, tracked the resultant quantities (shown below), and graphed them (displayed in the results section): \newline
-Parameter Sweeps: 
-\begin{itemize}
-    \item $\theta_{max}$
-    \begin{itemize}
-        \item $\ 0 \leq \theta \leq \theta_{max}$ rad
-        \item $ \frac{\pi}{64} \leq \theta_{max} \leq \frac{\pi}{16} $ rad
-        \item Constant: $\omega$ = $\frac{\pi}{100} \frac{\theta}{s}$ rad/s
-    \end{itemize}
-    \item $\omega$ sweep
-    \begin{itemize}
-        \item $\ \frac{\pi}{100} \leq \omega \leq \frac{\pi}{200}$ rad/s
-        \item Constant: $\theta_{max}$ = $\pi/64$ rad
-    \end{itemize}
-\end{itemize}
-Our simulation used the following constants: 
-\begin{itemize}
-    \item Globals
-    \begin{itemize}
-        \item Mass = 1 kg
-        \item Spring Constant = 15000 N/m
-        \item Dash-pot Constant = 600 N/m
-        \item Gravity = 9.8 $m/s^2$
-        \item Maximal Floor Strength = 10000 N
-    \end{itemize}
-    \item Structure
-    \begin{itemize}
-        \item Width = 2 m
-        \item Strength = 3 N
-        \item Levels = 5 dimensionless
-    \end{itemize}
-    \item Simulate
-    \begin{itemize}
-        \item dt = $1\cdot 10^{-4}$ s
-        \item $t_{end}$ = 10 s
-    \end{itemize}
-\end{itemize}
-We tracked the following resultant quantities in each simulation: 
-\begin{itemize}
-    \item Horizontal Center of Mass (m)
-    \item Horizontal Center of Velocity (m/s)
-    \item Sum of Vertical Displacement (m)
-\end{itemize} 
+The implementation of the methodology was carried out in python. A working model was built to take real-time data and generate the appropriate visualization. 
+\begin{minted}{python}
+def hv_log(historicals, portfolio):
+    dates = historicals['date']
+    df = {}
+    for stock in portfolio:
+        sigmas = {}
+        h = historicals[stock].join(dates)
+        i = timedelta(days = 31)
+        j = 1
+        while(i+dates[j] <= dates[len(dates)-1]):
+            h1 = h[(h['date'] >= dates[j-1]) & (h['date'] <= i+dates[j])]
+            h1['volatility'] = h1['close'].pct_change()
+            h1[1:]
+            sigma_matrix = np.std(h1['volatility'])* np.sqrt(252)
+            sigmas[i+dates[j]] = sigma_matrix
+            j+=1
+        df[stock] = sigmas
+    return pd.DataFrame(df)
+\end{minted}
 \end{flushleft}
+
+\subsection{Strike Prices}
+\begin{flushleft}
+Strike prices were calculated for each stock instead of scraped. 
+\begin{minted}{python}
+def strikes_(s, num):
+    strikes = {}
+    for ticker in s:
+        if (s[ticker]>300):
+            strikes[ticker] = [((round(s[ticker],-1))+((i-num)*10)) for i in range(2*num)]
+        else:
+            strikes[ticker] = [((round(s[ticker],-1))+((i-num)*5)) for i in range(2*num)]
+    return strikes
+\end{minted}
+\end{flushleft}
+
+\subsection{Expiration}
+\begin{flushleft}
+Expiration was also calculated for each stock. This was tricky because options expire on the 3rd Friday of each quarter. Because the project focused on longer-dated options. The code generated expiries from the current date for the next 3 quarters, and then 2 half-years from then. Although the code works efficiently, not all stocks follow these dates. There were 3 exceptions with the case examples which the Tradier library caught later. These had to manually fixed in Jupyter. 
+\begin{minted}{python}
+def third_friday(month, year):
+    monthcal = c.monthdatescalendar(year, month)
+    return monthcal[2][-1]
+def generate_times(start, year, options_dates):
+    t = []
+    for i in range(6):
+        if (i < 3):
+            t.append(third_friday(options_dates[(start+i)%len(options_dates)], (year + int((start+i)/len(options_dates)))))
+        else:
+            t.append(third_friday(options_dates[(start+i+(i-2))%len(options_dates)], (year + int((start+i+(i-2))/len(options_dates)))))
+    return t
+def t_(today, options_dates):
+    t = []
+    month = int(today.month-1 + today.day/third_friday(today.month, today.year).day) % 12
+    if (month > 9):
+        t = generate_times(0, today.year+1, options_dates)
+    elif (month > 6):
+        t = generate_times(3, today.year, options_dates)
+    elif (month > 3):
+        t = generate_times(2, today.year, options_dates)
+    else:
+        t = generate_times(1, today.year, options_dates)
+    return t
+\end{minted}
+\end{flushleft}
+
+\subsection{Options Pricing}
+\begin{flushleft}
+These are the options pricing functions that were used in Jupyter to calculate real-time pricing of each model. 
+\begin{minted}{python}
+def M_(c1, c2,default, beta, t):
+    x = c1*beta*np.sqrt(t)/default - c2
+    return x/(1+abs(x))+1
+def call_(s, x, t, r, q, d1, d2):
+    return s*math.exp(-q*t)*norm.cdf(d1)-x*math.exp(-r*t)*norm.cdf(d2)
+def put_(s, x, t, r, q, d1, d2):
+    return x*math.exp(-r*t)*(1-norm.cdf(d2)) - s*math.exp(-q*t)*(1-norm.cdf(d1))
+def d1_(s, x, t, r, q, sigma):
+    return (np.log(s/x)+(r-q+(np.power(sigma,2)/2)*t)) / (sigma*np.sqrt(t))
+def d2_(d1, sigma, t):
+    return d1 - sigma*np.sqrt(t)
+\end{minted}
+\end{flushleft}
+
+\subsection{Model Extension Indicators}
+\begin{flushleft}
+The US High Yield Master 2 Option-Adjusted Spread was used for the defaulted rate in the extended model. This is an economic indicator from FRED, which tracks the percent of high-yield bond defaults in the US. See figure 7 for reference. 
+\newline\newline
+This was used for the following reasons: 
+\begin{enumerate}
+\item It has historically predated US financial market crashes. Check 2007 and 2001. 
+\item It represents the most leveraged defaulted debt within the financial markets this paper is addressing. 
+\end{enumerate}
+The $\beta$ values were pulled from the IEXFinance API. $\beta$ is the historical risk of an asset to the market fluctuations. It can be calculated by a regression analysis between historical asset and market returns. The $\beta$ for the SPY should be close to 1, while more volatile stocks like GOOGL will be closer to 1.5. 
+\end{flushleft}
+
 \subsection{Results}
 \begin{flushleft}
-1. \textbf{Parameter Sweep} over $theta_max$ and $\omega$ were run.\newline 
-Figures 3,4,and 5 are the results for the parameter sweep of $theta_max$ and Figures 6,7,and 8 are the results for the parameter sweep of $\omega$. \newline
-2. \textbf{Vertical Displacement per level} was graphed over a series of simulations to show perturbations to the structure. See Figure 9 in Appendix under Figures 
-
+1. \textbf{Historical Volatility} \newline 
+The figures section contains the plots for each historical volatility calculation. There are two plots which show all 4 calculations on one. This was done for BA and AAPL as examples. \newline\newline
+2. \textbf{3D Volatility Surfances} The volatility surfaces for each stock and each call/put are displayed below in the Figures section. However, there are interactive figures available to explore. The link is referenced in the Appendix.  See Figure 8-18 in Appendix and 3D Surfaces in Appendix under Code Base. 
+\newline\newline
 \textbf{These can be seen at in the Appendix section under Figures}
 \end{flushleft}
-
-\subsection{Discussion}
-
-
-\begin{flushleft}{The simulation was carried out over a number of parameter combinations.  We altered the maximum angle of platform rotation and speed of platform rotation.  Our observations recorded the resulting effects of the parameter changes. From the Figures in the Appendix, we can see the instances where the figure becomes unstable at certain $\theta and \omega$ values. 
-While the choice of parameters determines whether or not the entire structure will collapse, an interesting pattern is observed during stable conditions.  Stability is highest is the bottom structure and lowest in the second level, however, the trend then switches to increasing with height. This is due to the efforts of the level below contributing to an  task of compensation by the structure above.} 
-\end{flushleft}
-
+\newpage
 
 \section{Conclusion}
+\subsection{Discussion}
+\begin{flushleft}{
+\begin{itemize}
+  \item \textbf{Historical Volatility} \newline
+  \tabHorizontal Historical Volatility was presented by 4 different methodologies. After the visualization of these 4 methodologies; it became clear that the classical calculation $hv_log$ made the most sense for the longer-term options I was considering. The intraday calculations, although interesting, often hold volatility that the market would not consider influential in longer dated options. 
+  \item \textbf{Black-Scholes-Merton Extension} \newline
+  \tabHorizontal The Black-Scholes-Merton Extension as seen in the figures below often intersects the Black-Scholes-Merton model surface and the Real-time Spread surface. More so, the Extension favors time as a more defining parameter than the Black-Scholes-Merton or Spread models. It is impossible to evaluate the effectiveness of the extension model on predicatively pricing future options. Because the predictive model implies that the current market conditions will effect future prices of the options and thus both the current Spread and the Black-Scholes-Merton model may not reflect the true options pricing. This is further discussed in the Extensions section below. 
+  \item \textbf{3D Volatility Surfaces} \newline
+  \tabHorizontal The 3D Volatility Surfaces are a great tool to explore market inefficiencies in options pricing. As a definitive analysis it is difficult to evaluate the effectiveness of the models in pricing options without taking into affect the change is options prices between days. This is because the market may contain arbitrary inefficies on any given day. 
+\end{itemize}
+} 
+\end{flushleft}
+
 \subsection{Improvements}
 \begin{flushleft} 
 \begin{itemize}
-  \item \textbf{Horizontal Gravity} \newline
-  \tabHorizontal Horizontal Gravity is not accounted for in the model. This is a known area of improvement that the model was not able to account for. This resulted in a lesser horizontal velocity due to a lesser horizontal force when the structure was rotated. This would arguably help the structures ability to self-balance. This feature would be easy to implement by splitting the components of gravity. Unfortunately, the model would break if the x component of gravity was not set to 0.
-  \item \textbf{Structural Tension across levels} \newline
-  \tabHorizontal Structural tension was not transferred across all levels. This means the bottom levels did not bear the weight of the upper levels and thus did not bear the force of their position. This is also a feature, the model should include to obtain real-world accuracy. We built the model to be only one level; when we decided to extend the height of the model. We did not have the time to implement this structural code change to the force calculations and thus to our model. 
-  \item \textbf{Reaction when right foot node > width} \newline
-  \tabHorizontal When the right foot node reaches a y value greater than height, the structure can't react. This is because the right leg is set by $width\cdot sin(\theta)$. This is one of the reasons we bound the parameter sweep for $\omega$ and $\theta_{max}$ as we did. 
+  \item \textbf{3D Surfaces for each Historical Volatility} \newline
+  \tabHorizontal This would be an effective and interesting improvement to visualize the effect of $\sigma$ calculations on the 3D volatility surfaces. 
+  \item \textbf{Parameter sweep for $c_1,c_2$} \newline
+  \tabHorizontal A Parameter sweep over $c_1, c_2$ would be a better measure to fit the extension to current real-time market spread pricing. This would need to done over-time to ensure that certain market conditions at a singular point in time don't dominate the sweep.  
 \end{itemize}
 \end{flushleft}
 
@@ -198,61 +267,145 @@ While the choice of parameters determines whether or not the entire structure wi
 \begin{flushleft} 
 \begin{itemize}
   \item \textbf{Fixing the Improvements} \newline
-  \tabHorizontal Fixing the listed Improvements in the above section would clarify a more stable and real-world applicable parameter sweep. This could be used to distinguish the impact and limits of a hydraulic system on a basic building structure. Our model could be translated to a simplified model of a buildings structure via dimensional analysis.  
-  \item \textbf{3D-Rendering} \newline
-  \tabHorizontal Our model could easily be extended to include 3 dimensions. This would improve the visual appeal and real-world application of the model. Simulations with rotations around specific axes could also be distinguished and analyzed. This would be pertinent to using our structure to model any real-world self-balancing hydraulic system. 
-  \item \textbf{Physical Therapy and Core Stability Modelling} \newline
-  \tabHorizontal This project started with the fascination of the human body and its ability to self balance on tilted-platforms. This model could be extended to analyze a mechanism such as core strength by cutting the model down to 1 level, adding feet as the stable ground point, adding a head mass, and adding hands for balancing. This would be a difficult, but fascinating extension. 
+  \tabHorizontal Fixing the listed Improvements in the above section would clarify a more applicable 3D volatility surface and thus model extension. This could be used to further evaluate the effectiveness of the model extension  
+  \item \textbf{Back-Test} \newline
+  \tabHorizontal A back-test to validate the model would be a key extension. There are several ways this could take place. For example, the extension could simply track the pricing each day of all three-models and present a visualization of how each fluctuates with the market. Or the back-test could trace a period of high-default like 2007 to understand how the model would price options and if this would be effective in the long-run. One could also take the approach of tracking pricing of the models when it would be purchased vs. when it would expire. This would need some more distilled thought, however. 
+  \item \textbf{American Binary Options} \newline
+  \tabHorizontal The Black-Scholes-Merton equation and thus its extension implies that the option will only be exercised at expiry. This is untrue of American options and thus could be optimized by using a Binary American options pricing model. 
+  \item \textbf{Cumulative Distribution Function} \newline
+  \tabHorizontal The Cumulative Normal Distribution Function which the Black-Scholes-Merton uses to imply probabilities of future pricing changes on the underlying asset may not be an optimal technique to model the financial markets. One could try a Multi-Fractal approach or a Fat-tails distribution which more heavily weights highly improbable events and lessens the likelihood of slightly improbable events. This has been shown to more accurately model probabilities of pricing changes in financial market. This could be included in the back-test to use historical market conditions as a benchmark for accurateness of the model extension. 
 \end{itemize}
 \end{flushleft}
 
 
 \section{Appendix}
-\subsubsection{Code}
+\subsection{References}
+\subsubsection{Bibliography}
+
+\begin{itemize}
+\item Black, Fischer and Scholes, Myron, (1972), The Valuation of Option Contracts and a Test of Market Efficiency, Journal of Finance, 27, issue 2, p. 399-417, https://EconPapers.repec.org/RePEc:bla:jfinan:v:27:y:1972:i:2:p:399-417.
+\item Black, Fischer. "The pricing of commodity contracts." Journal of financial economics 3.1-2 (1976): 167-179.
+\item Spurgin, Richard B., and Thomas Schneeweis. "Efficient Estimation of Intra-day Volatility: A Methodof-Moments approach incorporating Trading Range." Financial Markets Tick by Tick (1999).
+\item Taleb, Nassim. Dynamic hedging: managing vanilla and exotic options. Vol. 64. John Wiley & Sons, 1997.
+\end{itemize}
+
+\subsubsection{API References}
+\begin{itemize}
+\item FRED API - \url{https://research.stlouisfed.org/docs/api/fred/}
+\item Tradier API - \url{https://developer.tradier.com/}
+\item IEX Exchange API - \url{https://iextrading.com/developer/docs/#getting-started}
+\item Plotly API - \url{https://plot.ly/python/}
+\end{itemize}
+
+
+\subsection{Code Base}
 \begin{flushleft}
- The project was done in python & jupyter hub. The link to the github is here: https://github.com/jaisal1024/options_realtime_modeling
+ The project was written in python. 
+\begin{itemize}
+\item Github -  \url{https://github.com/jaisal1024/options_realtime_modeling}
+\item  Interactive Volatility Surfaces - \url{https://plot.ly/~jaisal1024/#/}
+\end{itemize}
 \end{flushleft}
+
 \subsection{Figures}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/turn.png}
-\caption{Live Modelling of a Rotated Structure}
+\includegraphics[width =\textwidth]{images/HV/HV-LOG.png}
+\caption{Historical Volatility - Log}
 \centering
 \end{figure}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/theta_xcm.png}
-\caption{Parameter Sweep for $\theta_{max}$}
+\includegraphics[width =\textwidth]{images/HV/HV-PCT.png}
+\caption{Historical Volatility - Pct}
 \centering
 \end{figure}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/theta_vcm.png}
-\caption{Parameter Sweep for $\theta_{max}$}
+\includegraphics[width =\textwidth]{images/HV/HV_W.png}
+\caption{Historical Volatility - Intraday Weighted}
 \centering
 \end{figure}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/theta_y.png}
-\caption{Parameter Sweep for $\theta_{max}$}
+\includegraphics[width =\textwidth]{images/HV/HV_W.png}
+\caption{Historical Volatility - Intraday Parkinson}
 \centering
 \end{figure}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/speedrot_xcm.png}
-\caption{Parameter Sweep for $\omega$}
+\includegraphics[width =\textwidth]{images/HV/HV-ALL-AAPL.png}
+\caption{Historical Volatility - All APPL}
 \centering
 \end{figure}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/speedrot_vcm.png}
-\caption{Parameter Sweep for $\omega$}
+\includegraphics[width =\textwidth]{images/HV/HV-ALL-BA.png}
+\caption{Historical Volatility - All BA}
 \centering
 \end{figure}
-\newpage \newpage
+
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/speedrot_y.png}
-\caption{Parameter Sweep for $\omega$}
+\includegraphics[width =\textwidth]{images/BAMF.png}
+\caption{FRED Defaulted Debt Indicator}
+\centering
+\end{figure}
+
+
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/AAPLCall.png}
+\caption{Apple Call Volatility Surface}
 \centering
 \end{figure}
 \begin{figure}[h!]
-\includegraphics[width =\textwidth]{images/download-9.png}
-\caption{Vertical Displacements over Levels of Structure}
+\includegraphics[width =\textwidth]{images/VolSurface/APPLPut.png}
+\caption{Apple Put Volatility Surface}
 \centering
 \end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/BACall.png}
+\caption{Boeing Call Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/BAPut.png}
+\caption{Boeing Put Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/GOOGLCall.png}
+\caption{Google Call Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/GOOGLPut.png}
+\caption{Google Put Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/MSFTCall.png}
+\caption{Microsoft Call Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/MSFTPut.png}
+\caption{Microsoft Put Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/SPYCall.png}
+\caption{SPY Call Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/SPYPut.png}
+\caption{SPY Put Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/VCall.png}
+\caption{Visa Call Volatility Surface}
+\centering
+\end{figure}
+\begin{figure}[h!]
+\includegraphics[width =\textwidth]{images/VolSurface/VPut.png}
+\caption{Visa Put Volatility Surface}
+\centering
+\end{figure}
+
 
 \end{document}
