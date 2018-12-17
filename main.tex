@@ -114,7 +114,7 @@ The real-time pricing involved a substantial amount of software development. Thi
 \item V - Visa 
 \item AAPL - Apple
 \item GOOGL - Alphabet Class A
-\item SPY -  SPDR S&P 500 ETF Trust
+\item SPY -  SPDR S\&P 500 ETF Trust
 \end{itemize}
 \begin{flushleft} 
 These assets were chosen directly from my personal portfolio as they held the most interest to me. In the code, one can select their own portfolio assets to visualize. 
@@ -244,7 +244,7 @@ The figures section contains the plots for each historical volatility calculatio
 \begin{flushleft}{
 \begin{itemize}
   \item \textbf{Historical Volatility} \newline
-  \tabHorizontal Historical Volatility was presented by 4 different methodologies. After the visualization of these 4 methodologies; it became clear that the classical calculation $hv_log$ made the most sense for the longer-term options I was considering. The intraday calculations, although interesting, often hold volatility that the market would not consider influential in longer dated options. 
+  \tabHorizontal Historical Volatility was presented by 4 different methodologies. After the visualization of these 4 methodologies; it became clear that the classical calculation $hv_{log}$ made the most sense for the longer-term options I was considering. The intraday calculations, although interesting, often hold volatility that the market would not consider influential in longer dated options. 
   \item \textbf{Black-Scholes-Merton Extension} \newline
   \tabHorizontal The Black-Scholes-Merton Extension as seen in the figures below often intersects the Black-Scholes-Merton model surface and the Real-time Spread surface. More so, the Extension favors time as a more defining parameter than the Black-Scholes-Merton or Spread models. It is impossible to evaluate the effectiveness of the extension model on predicatively pricing future options. Because the predictive model implies that the current market conditions will effect future prices of the options and thus both the current Spread and the Black-Scholes-Merton model may not reflect the true options pricing. This is further discussed in the Extensions section below. 
   \item \textbf{3D Volatility Surfaces} \newline
@@ -308,6 +308,13 @@ The figures section contains the plots for each historical volatility calculatio
 \end{flushleft}
 
 \subsection{Figures}
+For the Volatility Surface the key is as follow: 
+\begin{itemize}
+\item Red = Black-Scholes-Merton Predictive Extension
+\item Blue = Black-Scholes-Merton Model
+\item Green = Real-time Spread
+\end{itemize}
+
 \begin{figure}[h!]
 \includegraphics[width =\textwidth]{images/HV/HV-LOG.png}
 \caption{Historical Volatility - Log}
