@@ -2,7 +2,7 @@
 Real-time predictive options model - Numerical Solutions: Projects in Mathematical Modeling
 ## Sample Renderings 
 ![](../master/images/HV/HV-Log.png "HV Log") ![](../master/images/HV/HV-ALL-AAPL.png "HV All") 
-![3D Volatility Surface](../master/images/VolSurfaceGOOGLPut.png)
+![3D Volatility Surface](../master/images/VolSurface/GOOGLPut.png)
 ## Abstract
 This paper explores the Black-Scholes-Merton options pricing model, derives a predictive extension model, and visualizes both models in comparison to real-time pricing options pricing. The paper also explores various methodologies of calculating historical volatility. A portfolio of 5 U.S. Market Stocks and 1 index fund was taken as example for the project. The model was limited to visual analysis from real-time simulations as further explained in the extensions
 ## Overview 
