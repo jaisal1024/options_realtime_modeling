@@ -1,5 +1,4 @@
 # options_realtime_modeling
-Real-time predictive options model <br/><br/>
 Numerical Solutions: Projects in Mathematical Modeling <br/><br/>
 Jaisal Friedman <br/><br/>
 ## Abstract
